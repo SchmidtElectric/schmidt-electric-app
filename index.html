@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schmidt Electric">
+<meta name="theme-color" content="#d4e600">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Schmidt Electric LLC — Job Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -848,6 +855,13 @@ sb.auth.getSession().then(({ data: { session } }) => {
   if (session) bootApp();
 });
 
+// Register service worker for PWA + push notifications
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    console.log('SW registered');
+  }).catch(err => console.log('SW error:', err));
+}
+
 // ═══════════════════════════════════════
 //  BOOT APP
 // ═══════════════════════════════════════
@@ -871,6 +885,13 @@ async function bootApp() {
   document.getElementById('est-date').value = today();
   document.getElementById('job-start').value = today();
   await loadAll();
+  // Handle PWA home screen shortcuts
+  const params = new URLSearchParams(window.location.search);
+  const shortcut = params.get('shortcut');
+  if (shortcut === 'ticket') { showPage('tickets'); setTimeout(() => openTicketModal(), 400); }
+  if (shortcut === 'job')    { showPage('jobs');    setTimeout(() => openJobModal(),    400); }
+  // Start realtime listener
+  setupRealtimeNotifications();
 }
 
 // ═══════════════════════════════════════
