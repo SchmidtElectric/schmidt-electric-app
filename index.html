@@ -209,6 +209,7 @@ option{background:var(--dark);}
     </div>
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="nav-tab" onclick="showPage('tickets')">Tickets</button>
       <button class="nav-tab" onclick="showPage('customers')">Customers</button>
       <button class="nav-tab" onclick="showPage('estimates')">Estimates</button>
       <button class="nav-tab" onclick="showPage('jobs')">Jobs</button>
@@ -251,7 +252,39 @@ option{background:var(--dark);}
         <div id="dash-estimates"><div class="loading"><div class="spin"></div>LOADING</div></div>
       </div>
     </div>
+    <!-- TICKETS WIDGET -->
+    <div class="panel mb14">
+      <div class="panel-head">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="panel-title">OPEN TICKETS</div>
+          <div id="dash-ticket-badge" style="background:var(--red);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:14px;padding:1px 8px;display:none;"></div>
+        </div>
+        <button class="btn-primary btn-sm" onclick="showPage('tickets');openTicketModal()">+ LOG TICKET</button>
+      </div>
+      <div id="dash-tickets"><div class="loading"><div class="spin"></div>LOADING</div></div>
+    </div>
   </div>
+
+  <!-- ══ TICKETS ══ -->
+  <div class="page" id="page-tickets">
+    <div class="sec-header mb18">
+      <div><div class="sec-title">WORK <span>TICKETS</span></div><div class="sec-sub" id="tickets-sub">// 0 tickets</div></div>
+      <button class="btn-primary btn-sm" onclick="openTicketModal()">+ LOG TICKET</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="btn-ghost" onclick="filterTickets('all')" id="tf-all" style="border-color:var(--yellow);color:var(--yellow);">ALL</button>
+      <button class="btn-ghost" onclick="filterTickets('New')" id="tf-New">NEW</button>
+      <button class="btn-ghost" onclick="filterTickets('Assigned')" id="tf-Assigned">ASSIGNED</button>
+      <button class="btn-ghost" onclick="filterTickets('In Progress')" id="tf-In Progress">IN PROGRESS</button>
+      <button class="btn-ghost" onclick="filterTickets('Complete')" id="tf-Complete">COMPLETE</button>
+    </div>
+    <div class="panel" style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>Caller</th><th>Phone</th><th>Type</th><th>Priority</th><th>Description</th><th>Assigned To</th><th>Status</th><th>Received</th><th>Follow-up</th><th></th></tr></thead>
+        <tbody id="tickets-body"></tbody>
+      </table>
+      <div class="empty" id="tickets-empty" style="display:none;"><div class="empty-icon">📞</div><div class="empty-msg">NO TICKETS YET — LOG YOUR FIRST CALL</div></div>
+    </div>
 
   <!-- ══ CUSTOMERS ══ -->
   <div class="page" id="page-customers">
@@ -627,6 +660,69 @@ option{background:var(--dark);}
     <div class="modal-foot">
       <button class="btn-ghost" onclick="closeModal('modal-van')">CANCEL</button>
       <button class="btn-primary btn-sm" onclick="saveVan()">SAVE VEHICLE</button>
+    </div>
+  </div>
+</div>
+
+<!-- TICKET -->
+<div class="overlay" id="modal-ticket">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-head"><div class="modal-title" id="ticket-modal-title">LOG TICKET</div><button class="modal-close" onclick="closeModal('modal-ticket')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ticket-id">
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Caller Name</label><input class="form-input" id="ticket-caller" placeholder="e.g. John Smith"></div>
+        <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="ticket-phone" placeholder="812-000-0000"></div>
+      </div>
+      <div class="form-row c3">
+        <div class="form-group"><label class="form-label">Type</label>
+          <select class="form-select" id="ticket-type">
+            <option>Service Call</option>
+            <option>New Customer Inquiry</option>
+            <option>Existing Customer</option>
+            <option>Warranty</option>
+            <option>Emergency</option>
+            <option>Generator Service</option>
+            <option>Estimate Request</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Priority</label>
+          <select class="form-select" id="ticket-priority">
+            <option>Normal</option>
+            <option>Urgent</option>
+            <option>Emergency</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-select" id="ticket-status">
+            <option>New</option>
+            <option>Assigned</option>
+            <option>In Progress</option>
+            <option>Complete</option>
+            <option>No Answer / Called Back</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Assigned To</label><select class="form-select" id="ticket-assigned"></select></div>
+        <div class="form-group"><label class="form-label">Follow-up Date</label><input class="form-input" type="date" id="ticket-followup"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Date Received</label><input class="form-input" type="date" id="ticket-date"></div>
+        <div class="form-group"><label class="form-label">Time Received</label><input class="form-input" type="time" id="ticket-time"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Description / What They Need</label><textarea class="form-textarea" id="ticket-desc" placeholder="What did the caller say? What do they need?"></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="ticket-notes" placeholder="Any follow-up notes..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-ticket')">CANCEL</button>
+      <button id="ticket-convert-btn" class="btn-ghost" onclick="convertTicketToJob()" style="display:none;border-color:var(--green);color:var(--green);">⚡ CONVERT TO JOB</button>
+      <button class="btn-primary btn-sm" onclick="saveTicket()">SAVE TICKET</button>
     </div>
   </div>
 </div>
@@ -1760,6 +1856,252 @@ const _origOpenCustDetail = openCustDetail;
 openCustDetail = function(id) {
   _origOpenCustDetail(id);
   renderCustomerGenerators(id);
+};
+
+// ═══════════════════════════════════════
+//  TICKETS
+// ═══════════════════════════════════════
+let ticketFilter = 'all';
+DATA.tickets = [];
+
+async function loadTickets() {
+  const { data } = await sb.from('tickets').select('*').order('created_at', {ascending:false});
+  DATA.tickets = data || [];
+}
+
+function filterTickets(f) {
+  ticketFilter = f;
+  document.querySelectorAll('[id^=tf-]').forEach(b=>{b.style.borderColor='';b.style.color='';});
+  const el = document.getElementById('tf-'+f);
+  if(el){el.style.borderColor='var(--yellow)';el.style.color='var(--yellow)';}
+  renderTickets();
+}
+
+function renderTickets() {
+  const open = DATA.tickets.filter(t=>t.status!=='Complete');
+  document.getElementById('tickets-sub').textContent = `// ${DATA.tickets.length} total · ${open.length} open`;
+
+  // Dashboard widget
+  const urgent = DATA.tickets.filter(t=>t.status!=='Complete' && (t.priority==='Urgent'||t.priority==='Emergency'));
+  const badge = document.getElementById('dash-ticket-badge');
+  if (open.length > 0) {
+    badge.style.display='inline-block';
+    badge.textContent = open.length + ' OPEN';
+    badge.style.background = urgent.length > 0 ? 'var(--red)' : 'var(--orange)';
+  } else {
+    badge.style.display='none';
+  }
+
+  const dashTickets = document.getElementById('dash-tickets');
+  const openTickets = DATA.tickets.filter(t=>t.status!=='Complete').slice(0,5);
+  dashTickets.innerHTML = openTickets.length ? openTickets.map(t => {
+    const assignee = DATA.crew.find(c=>c.id===t.assigned_to);
+    const priColor = t.priority==='Emergency'?'var(--red)':t.priority==='Urgent'?'var(--orange)':'var(--muted2)';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1a1a1a;cursor:pointer;" onclick="editTicket('${t.id}')">
+      <div style="width:8px;height:8px;border-radius:50%;background:${priColor};flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:13px;">${t.caller_name||'Unknown'}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${t.type} · ${t.received_date||'—'}</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.description||'—'}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+        ${ticketStatusBadge(t.status)}
+        ${assignee?`<div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${assignee.name.split(' ')[0]}</div>`:''}
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:12px;font-family:DM Mono,monospace;padding:12px 0;">No open tickets — all clear ✓</div>';
+
+  // Full tickets table
+  let list = ticketFilter==='all' ? DATA.tickets : DATA.tickets.filter(t=>t.status===ticketFilter);
+  const tbody = document.getElementById('tickets-body');
+  const empty = document.getElementById('tickets-empty');
+  if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = list.map(t => {
+    const assignee = DATA.crew.find(c=>c.id===t.assigned_to);
+    const priColor = t.priority==='Emergency'?'var(--red)':t.priority==='Urgent'?'var(--orange)':'var(--text)';
+    return `<tr onclick="editTicket('${t.id}')">
+      <td><div style="font-weight:600;">${t.caller_name||'—'}</div></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;">${t.caller_phone||'—'}</td>
+      <td style="font-size:12px;color:var(--muted2);">${t.type||'—'}</td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:10px;color:${priColor};">${t.priority}</span></td>
+      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.description||'—'}</td>
+      <td style="font-size:12px;color:var(--muted2);">${assignee?assignee.name:'—'}</td>
+      <td>${ticketStatusBadge(t.status)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2);white-space:nowrap;">${t.received_date||'—'} ${t.received_time?t.received_time.substring(0,5):''}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:${t.followup_date&&new Date(t.followup_date)<new Date()?'var(--red)':'var(--muted2)'};">${t.followup_date||'—'}</td>
+      <td><div style="display:flex;gap:6px;">
+        <button class="btn-ghost" style="padding:4px 8px;font-size:10px;border-color:var(--green);color:var(--green);" onclick="event.stopPropagation();quickConvertTicket('${t.id}')">⚡ JOB</button>
+        <button class="btn-danger" onclick="event.stopPropagation();deleteTicket('${t.id}')">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function ticketStatusBadge(s) {
+  const map = {'New':'badge-pending','Assigned':'badge-active','In Progress':'badge-active','Complete':'badge-complete','No Answer / Called Back':'badge-onhold'};
+  return `<span class="badge ${map[s]||'badge-pending'}">${s}</span>`;
+}
+
+function openTicketModal(t) {
+  populateSel('ticket-assigned', DATA.crew.map(c=>({value:c.id,label:c.name})), 'Unassigned');
+  document.getElementById('ticket-modal-title').textContent = t ? 'EDIT TICKET' : 'LOG TICKET';
+  document.getElementById('ticket-id').value       = t?.id||'';
+  document.getElementById('ticket-caller').value   = t?.caller_name||'';
+  document.getElementById('ticket-phone').value    = t?.caller_phone||'';
+  document.getElementById('ticket-type').value     = t?.type||'Service Call';
+  document.getElementById('ticket-priority').value = t?.priority||'Normal';
+  document.getElementById('ticket-status').value   = t?.status||'New';
+  document.getElementById('ticket-followup').value = t?.followup_date||'';
+  document.getElementById('ticket-date').value     = t?.received_date||today();
+  document.getElementById('ticket-time').value     = t?.received_time||new Date().toTimeString().substring(0,5);
+  document.getElementById('ticket-desc').value     = t?.description||'';
+  document.getElementById('ticket-notes').value    = t?.notes||'';
+  if (t?.assigned_to) document.getElementById('ticket-assigned').value = t.assigned_to;
+  // Show convert button only on existing tickets not yet converted
+  const convertBtn = document.getElementById('ticket-convert-btn');
+  convertBtn.style.display = (t?.id && !t?.converted_job_id) ? 'inline-block' : 'none';
+  openModal('modal-ticket');
+}
+
+function editTicket(id) { openTicketModal(DATA.tickets.find(t=>t.id===id)); }
+
+async function saveTicket() {
+  const id = document.getElementById('ticket-id').value;
+  const data = {
+    caller_name:  document.getElementById('ticket-caller').value.trim(),
+    caller_phone: document.getElementById('ticket-phone').value.trim(),
+    type:         document.getElementById('ticket-type').value,
+    priority:     document.getElementById('ticket-priority').value,
+    status:       document.getElementById('ticket-status').value,
+    assigned_to:  document.getElementById('ticket-assigned').value||null,
+    followup_date:document.getElementById('ticket-followup').value||null,
+    received_date:document.getElementById('ticket-date').value||null,
+    received_time:document.getElementById('ticket-time').value||null,
+    description:  document.getElementById('ticket-desc').value.trim(),
+    notes:        document.getElementById('ticket-notes').value.trim(),
+  };
+  const { error } = id ? await sb.from('tickets').update(data).eq('id',id) : await sb.from('tickets').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  closeModal('modal-ticket'); showSaved();
+  // Notify other user of new ticket
+  if (!id) {
+    const assignee = DATA.crew.find(c=>c.id===data.assigned_to);
+    sendCrossUserNotif('📞 New Ticket', `${data.caller_name||'Unknown caller'} — ${data.type}${assignee?' → '+assignee.name:''}`);
+  }
+  toast(id?'TICKET UPDATED':'TICKET LOGGED');
+  await loadAll();
+}
+
+async function deleteTicket(id) {
+  if (!confirm('Delete this ticket?')) return;
+  await sb.from('tickets').delete().eq('id',id);
+  toast('TICKET DELETED'); await loadAll();
+}
+
+async function convertTicketToJob() {
+  const id = document.getElementById('ticket-id').value;
+  const ticket = DATA.tickets.find(t=>t.id===id);
+  if (!ticket) return;
+  closeModal('modal-ticket');
+  showPage('jobs');
+  openJobModal();
+  setTimeout(() => {
+    document.getElementById('job-name').value     = ticket.caller_name ? `${ticket.type} — ${ticket.caller_name}` : ticket.type;
+    document.getElementById('job-notes').value    = ticket.description||'';
+    document.getElementById('job-status').value   = 'pending';
+    document.getElementById('job-start').value    = today();
+    // Store ticket id to link after save
+    document.getElementById('job-id').dataset.fromTicket = id;
+  }, 100);
+  toast('FILL IN JOB DETAILS THEN SAVE');
+}
+
+async function quickConvertTicket(id) {
+  const ticket = DATA.tickets.find(t=>t.id===id);
+  if (!ticket || ticket.converted_job_id) { toast('ALREADY CONVERTED'); return; }
+  // Create job directly
+  const { data: newJob, error } = await sb.from('jobs').insert({
+    name: ticket.caller_name ? `${ticket.type} — ${ticket.caller_name}` : ticket.type,
+    type: 'Service Call',
+    status: 'pending',
+    start_date: today(),
+    notes: ticket.description||'',
+    contract: 0
+  }).select().single();
+  if (error) { alert('Error: '+error.message); return; }
+  // Link ticket to job and mark in progress
+  await sb.from('tickets').update({ converted_job_id: newJob.id, status: 'In Progress' }).eq('id', id);
+  toast('TICKET CONVERTED TO JOB'); await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  CROSS-USER PUSH NOTIFICATIONS
+//  Uses Supabase Realtime as the channel
+// ═══════════════════════════════════════
+const VAPID_PUBLIC = 'BLCqbgI5zbh469ikay4XF4fYm1uVCEGyh9RT2EmeQqtXYnMpH_hKTQQSAZT082AlH_z_oNf5AIU8adgU5Jl_Ens';
+
+function setupRealtimeNotifications() {
+  // Listen for new job notes posted by the OTHER user
+  sb.channel('job_notes_channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'job_notes' }, payload => {
+      if (payload.new.author !== currentUser?.email) {
+        const authorName = payload.new.author === 'randy@schmidtelectricindy.com' ? 'Randy' : 'Megan';
+        showBrowserNotif(`📝 ${authorName} added a note`, payload.new.note.substring(0,80));
+        // Refresh data silently
+        loadAll();
+      }
+    })
+    .subscribe();
+
+  // Listen for new tickets
+  sb.channel('tickets_channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets' }, payload => {
+      showBrowserNotif('📞 New Ticket Logged', `${payload.new.caller_name||'Unknown'} — ${payload.new.type}`);
+      loadAll();
+    })
+    .subscribe();
+
+  // Listen for ticket updates (assignment changes)
+  sb.channel('tickets_update_channel')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets' }, payload => {
+      const t = payload.new;
+      const assignee = DATA.crew.find(c=>c.id===t.assigned_to);
+      if (assignee) {
+        const isMe = (assignee.name.toLowerCase().includes('megan') && currentUser?.email === 'megan@schmidtelectricindy.com') ||
+                     (assignee.name.toLowerCase().includes('randy') && currentUser?.email === 'randy@schmidtelectricindy.com');
+        if (isMe) showBrowserNotif('📋 Ticket Assigned to You', `${t.caller_name||'Unknown'} — ${t.type}`);
+      }
+      loadAll();
+    })
+    .subscribe();
+}
+
+function sendCrossUserNotif(title, body) {
+  // Show to current user as confirmation
+  showBrowserNotif(title, body);
+}
+
+// Override enableNotifications to also set up realtime
+const _origEnableNotif = enableNotifications;
+enableNotifications = async function() {
+  await _origEnableNotif();
+  setupRealtimeNotifications();
+};
+
+// Override loadAll to also load tickets
+const _origLoadAll = loadAll;
+loadAll = async function() {
+  await _origLoadAll();
+  await loadTickets();
+  renderTickets();
+};
+
+// Override renderAll to also render tickets
+const _origRenderAll = renderAll;
+renderAll = function() {
+  _origRenderAll();
+  renderTickets();
 };
 </script>
 </body>
