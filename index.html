@@ -217,6 +217,7 @@ option{background:var(--dark);}
     </div>
     <div class="nav-right">
       <span class="save-badge" id="save-badge">✓ SAVED</span>
+      <button class="btn-ghost" id="notif-btn" onclick="enableNotifications()" style="font-size:9px;padding:5px 10px;display:none;">🔔 ENABLE ALERTS</button>
       <span class="nav-user" id="nav-user"></span>
       <button class="nav-signout" onclick="signOut()">SIGN OUT</button>
     </div>
@@ -276,7 +277,7 @@ option{background:var(--dark);}
       <!-- Customer info card -->
       <div class="panel mb14" id="cust-detail-card"></div>
       <!-- Jobs for this customer -->
-      <div class="panel" style="overflow-x:auto;">
+      <div class="panel mb14" style="overflow-x:auto;">
         <div class="panel-head">
           <div class="panel-title">JOBS</div>
           <button class="btn-primary btn-sm" onclick="openJobModalForCustomer()">+ ADD JOB</button>
@@ -286,6 +287,15 @@ option{background:var(--dark);}
           <tbody id="cust-jobs-body"></tbody>
         </table>
         <div class="empty" id="cust-jobs-empty" style="display:none;"><div class="empty-icon">⚡</div><div class="empty-msg">NO JOBS FOR THIS CUSTOMER YET</div></div>
+      </div>
+      <!-- Generators for this customer -->
+      <div class="panel" id="cust-gen-panel">
+        <div class="panel-head">
+          <div class="panel-title">⚙️ GENERATORS</div>
+          <button class="btn-primary btn-sm" onclick="openGenModal()">+ ADD GENERATOR</button>
+        </div>
+        <div id="cust-gen-list"></div>
+        <div class="empty" id="cust-gen-empty" style="display:none;"><div class="empty-icon">⚙️</div><div class="empty-msg">NO GENERATORS FOR THIS CUSTOMER</div></div>
       </div>
     </div>
   </div>
@@ -542,7 +552,17 @@ option{background:var(--dark);}
       <div class="form-row">
         <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="job-notes" placeholder="Scope, access info, special requirements..."></textarea></div>
       </div>
-      <!-- Photos section — only shown when editing existing job -->
+      <!-- Notes/log section — only shown when editing existing job -->
+      <div id="job-notes-section" style="display:none;">
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;margin-bottom:10px;">JOB LOG</div>
+          <div id="job-notes-feed" style="max-height:180px;overflow-y:auto;margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input class="form-input" id="job-note-input" placeholder="Add a note... (e.g. Rough-in complete on unit 4)" style="flex:1;">
+            <button class="btn-primary btn-sm" onclick="addJobNote()">POST</button>
+          </div>
+        </div>
+      </div>
       <div id="job-photos-section" style="display:none;">
         <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;margin-bottom:10px;">JOB PHOTOS <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;">(MAX 5)</span></div>
@@ -611,6 +631,82 @@ option{background:var(--dark);}
   </div>
 </div>
 
+<!-- GENERATOR -->
+<div class="overlay" id="modal-gen">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="gen-modal-title">ADD GENERATOR</div><button class="modal-close" onclick="closeModal('modal-gen')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="gen-id">
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Make</label><input class="form-input" id="gen-make" placeholder="e.g. Generac"></div>
+        <div class="form-group"><label class="form-label">Model</label><input class="form-input" id="gen-model-input" placeholder="e.g. GP8000E"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Serial Number</label><input class="form-input" id="gen-serial" placeholder="SN-000000"></div>
+        <div class="form-group"><label class="form-label">kW Rating</label><input class="form-input" id="gen-kw" placeholder="e.g. 8kW"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Location / Description</label><input class="form-input" id="gen-location" placeholder="e.g. Back of house, left side"></div>
+        <div class="form-group"><label class="form-label">Install Date</label><input class="form-input" type="date" id="gen-install"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="gen-notes" placeholder="Any additional notes..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-gen')">CANCEL</button>
+      <button class="btn-primary btn-sm" onclick="saveGenerator()">SAVE GENERATOR</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERATOR SERVICE -->
+<div class="overlay" id="modal-gen-service">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head"><div class="modal-title" id="gen-svc-title">LOG SERVICE</div><button class="modal-close" onclick="closeModal('modal-gen-service')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="gen-svc-id">
+      <input type="hidden" id="gen-svc-gen-id">
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Service Date</label><input class="form-input" type="date" id="gen-svc-date"></div>
+        <div class="form-group"><label class="form-label">Technician</label><select class="form-select" id="gen-svc-tech"></select></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Next Service Date</label><input class="form-input" type="date" id="gen-svc-next"></div>
+        <div class="form-group"><label class="form-label">Annual Reminder</label>
+          <select class="form-select" id="gen-svc-reminder">
+            <option value="1">Yes — remind me 1 year from today</option>
+            <option value="0">No reminder needed</option>
+          </select>
+        </div>
+      </div>
+      <div style="border:1px solid var(--border);padding:16px;margin-bottom:12px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;margin-bottom:12px;color:var(--yellow);">SERVICE CHECKLIST</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-oil" style="accent-color:var(--yellow);width:16px;height:16px;"> Oil &amp; Filter Change</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-spark" style="accent-color:var(--yellow);width:16px;height:16px;"> Spark Plugs</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-air" style="accent-color:var(--yellow);width:16px;height:16px;"> Air Filter</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-fuel" style="accent-color:var(--yellow);width:16px;height:16px;"> Fuel Filter</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-battery" style="accent-color:var(--yellow);width:16px;height:16px;"> Battery Test &amp; Load Test</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-coolant" style="accent-color:var(--yellow);width:16px;height:16px;"> Coolant Level</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-belt" style="accent-color:var(--yellow);width:16px;height:16px;"> Belt &amp; Hose Inspection</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-transfer" style="accent-color:var(--yellow);width:16px;height:16px;"> Transfer Switch Test</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-run" style="accent-color:var(--yellow);width:16px;height:16px;"> Run Test Under Load</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-leaks" style="accent-color:var(--yellow);width:16px;height:16px;"> Check for Leaks</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="chk-exhaust" style="accent-color:var(--yellow);width:16px;height:16px;"> Clean &amp; Inspect Exhaust</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Service Notes</label><textarea class="form-textarea" id="gen-svc-notes" placeholder="Parts used, observations, anything notable..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-gen-service')">CANCEL</button>
+      <button class="btn-primary btn-sm" onclick="saveGeneratorService()">SAVE SERVICE RECORD</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════
 //  SUPABASE INIT
@@ -668,7 +764,12 @@ async function bootApp() {
   document.getElementById('nav-user').textContent = name.toUpperCase();
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  document.getElementById('log-date').value = today();
+  DATA.generators = [];
+  DATA.genServices= [];
+  // Show notification enable button if not yet granted
+  if ('Notification' in window && Notification.permission !== 'granted') {
+    document.getElementById('notif-btn').style.display = 'inline-block';
+  }
   document.getElementById('mat-date').value = today();
   document.getElementById('maint-date').value = today();
   document.getElementById('est-date').value = today();
@@ -726,7 +827,7 @@ document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e
 let DATA = { customers:[], estimates:[], jobs:[], crew:[], laborLogs:[], materials:[], vans:[], maintLogs:[] };
 
 async function loadAll() {
-  const [c,e,j,cr,ll,m,v,ml] = await Promise.all([
+  const [c,e,j,cr,ll,m,v,ml,g,gs] = await Promise.all([
     sb.from('customers').select('*').order('name'),
     sb.from('estimates').select('*').order('created_at', {ascending:false}),
     sb.from('jobs').select('*').order('created_at', {ascending:false}),
@@ -735,6 +836,8 @@ async function loadAll() {
     sb.from('materials').select('*').order('mat_date', {ascending:false}),
     sb.from('vans').select('*').order('van_id'),
     sb.from('maintenance_logs').select('*').order('log_date', {ascending:false}),
+    sb.from('generators').select('*').order('created_at', {ascending:false}),
+    sb.from('generator_services').select('*').order('service_date', {ascending:false}),
   ]);
   DATA.customers  = c.data  || [];
   DATA.estimates  = e.data  || [];
@@ -744,6 +847,9 @@ async function loadAll() {
   DATA.materials  = m.data  || [];
   DATA.vans       = v.data  || [];
   DATA.maintLogs  = ml.data || [];
+  DATA.generators = g.data  || [];
+  DATA.genServices= gs.data || [];
+  checkServiceReminders();
   renderAll();
 }
 
@@ -1199,13 +1305,17 @@ function openJobModal(j) {
   document.getElementById('job-notes').value    = j?.notes||'';
   if (j?.customer_id) document.getElementById('job-cust-sel').value = j.customer_id;
   if (j?.estimate_id) document.getElementById('job-est-sel').value  = j.estimate_id;
-  // Show photos section only when editing existing job
+  // Show photos and notes section only when editing existing job
   const photosSection = document.getElementById('job-photos-section');
+  const notesSection = document.getElementById('job-notes-section');
   if (j?.id) {
     photosSection.style.display = 'block';
+    notesSection.style.display = 'block';
     loadJobPhotos(j.id);
+    loadJobNotes(j.id);
   } else {
     photosSection.style.display = 'none';
+    notesSection.style.display = 'none';
   }
   openModal('modal-job');
 }
@@ -1398,6 +1508,259 @@ async function deleteMaintLog(id) {
   await sb.from('maintenance_logs').delete().eq('id',id);
   toast('ENTRY DELETED'); await loadAll();
 }
+
+// ═══════════════════════════════════════
+//  JOB NOTES
+// ═══════════════════════════════════════
+async function loadJobNotes(jobId) {
+  const { data } = await sb.from('job_notes').select('*').eq('job_id', jobId).order('created_at');
+  const feed = document.getElementById('job-notes-feed');
+  const notes = data || [];
+  feed.innerHTML = notes.length ? notes.map(n => {
+    const isMe = n.author === currentUser?.email;
+    const name = n.author === 'megan@schmidtelectricindy.com' ? 'Megan' : n.author === 'randy@schmidtelectricindy.com' ? 'Randy' : n.author;
+    const dt = new Date(n.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    return `<div style="display:flex;gap:8px;margin-bottom:10px;${isMe?'flex-direction:row-reverse':''}">
+      <div style="width:28px;height:28px;background:var(--yellow);color:#000;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;flex-shrink:0;">${name[0]}</div>
+      <div style="max-width:80%;">
+        <div style="background:${isMe?'var(--panel2)':'var(--black)'};border:1px solid var(--border);padding:8px 12px;font-size:13px;">${n.note}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px;${isMe?'text-align:right':''}">${name} · ${dt}</div>
+      </div>
+      <button onclick="deleteJobNote('${n.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;align-self:flex-start;padding:2px;">✕</button>
+    </div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:11px;font-family:DM Mono,monospace;padding:8px 0;">No notes yet — add the first one</div>';
+  feed.scrollTop = feed.scrollHeight;
+}
+
+async function addJobNote() {
+  const jobId = document.getElementById('job-id').value;
+  const input = document.getElementById('job-note-input');
+  const note = input.value.trim();
+  if (!note || !jobId) return;
+  await sb.from('job_notes').insert({ job_id: jobId, note, author: currentUser?.email });
+  input.value = '';
+  await loadJobNotes(jobId);
+  // Notify other user
+  sendPushToOther(`📝 New note on job`, note.substring(0,60));
+}
+
+async function deleteJobNote(id) {
+  await sb.from('job_notes').delete().eq('id', id);
+  const jobId = document.getElementById('job-id').value;
+  await loadJobNotes(jobId);
+}
+
+// Enter key to post note
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement.id === 'job-note-input') addJobNote();
+});
+
+// ═══════════════════════════════════════
+//  GENERATORS
+// ═══════════════════════════════════════
+function renderCustomerGenerators(customerId) {
+  const gens = DATA.generators.filter(g => g.customer_id === customerId);
+  const list = document.getElementById('cust-gen-list');
+  const empty = document.getElementById('cust-gen-empty');
+  if (!gens.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  list.innerHTML = gens.map(g => {
+    const services = DATA.genServices.filter(s=>s.generator_id===g.id).sort((a,b)=>b.service_date.localeCompare(a.service_date));
+    const lastSvc = services[0];
+    const nextDue = lastSvc?.next_service_date;
+    const isOverdue = nextDue && new Date(nextDue) < new Date();
+    const isDueSoon = nextDue && !isOverdue && (new Date(nextDue) - new Date()) < 30*24*60*60*1000;
+    return `<div style="border:1px solid var(--border);padding:16px;margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${g.make||''} ${g.model||''} <span style="color:var(--yellow);">${g.kw_rating||''}</span></div>
+          <div style="font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:2px;">
+            ${g.serial_number?'SN: '+g.serial_number+' · ':''}${g.location||''}
+          </div>
+          ${nextDue ? `<div style="font-size:11px;margin-top:6px;font-family:'DM Mono',monospace;color:${isOverdue?'var(--red)':isDueSoon?'var(--orange)':'var(--green)'};">
+            ${isOverdue?'⚠ SERVICE OVERDUE':'✓ NEXT SERVICE'}: ${nextDue}
+          </div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn-primary btn-sm" onclick="openGenServiceModal('${g.id}')">+ LOG SERVICE</button>
+          <button class="btn-ghost" style="padding:4px 8px;font-size:10px;" onclick="openGenModal('${g.id}')">EDIT</button>
+          <button class="btn-danger" onclick="deleteGenerator('${g.id}')">✕</button>
+        </div>
+      </div>
+      ${services.length ? `<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">SERVICE HISTORY</div>
+        ${services.map(s => {
+          const tech = DATA.crew.find(c=>c.id===s.technician);
+          const checks = [s.chk_oil,s.chk_spark_plugs,s.chk_air_filter,s.chk_fuel_filter,s.chk_battery,s.chk_coolant,s.chk_belt_hose,s.chk_transfer_switch,s.chk_run_test,s.chk_leaks,s.chk_exhaust];
+          const completed = checks.filter(Boolean).length;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1a1a1a;font-size:12px;">
+            <div>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2);">${s.service_date}</span>
+              ${tech?` · <span>${tech.name}</span>`:''}
+              ${s.notes?` · <span style="color:var(--muted2);">${s.notes.substring(0,40)}${s.notes.length>40?'...':''}</span>`:''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--green);">${completed}/11 ✓</span>
+              <button class="btn-ghost" style="padding:3px 7px;font-size:9px;" onclick="openGenServiceModal('${g.id}','${s.id}')">VIEW</button>
+              <button class="btn-danger" onclick="deleteGenService('${s.id}')">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openGenModal(genId) {
+  const g = genId ? DATA.generators.find(x=>x.id===genId) : null;
+  document.getElementById('gen-modal-title').textContent = g ? 'EDIT GENERATOR' : 'ADD GENERATOR';
+  document.getElementById('gen-id').value            = g?.id||'';
+  document.getElementById('gen-make').value          = g?.make||'';
+  document.getElementById('gen-model-input').value   = g?.model||'';
+  document.getElementById('gen-serial').value        = g?.serial_number||'';
+  document.getElementById('gen-kw').value            = g?.kw_rating||'';
+  document.getElementById('gen-location').value      = g?.location||'';
+  document.getElementById('gen-install').value       = g?.install_date||'';
+  document.getElementById('gen-notes').value         = g?.notes||'';
+  openModal('modal-gen');
+}
+
+async function saveGenerator() {
+  const make = document.getElementById('gen-make').value.trim();
+  const id = document.getElementById('gen-id').value;
+  const data = { make, model:document.getElementById('gen-model-input').value.trim(), serial_number:document.getElementById('gen-serial').value.trim(), kw_rating:document.getElementById('gen-kw').value.trim(), location:document.getElementById('gen-location').value.trim(), install_date:document.getElementById('gen-install').value||null, notes:document.getElementById('gen-notes').value.trim(), customer_id:currentCustomerId };
+  const { error } = id ? await sb.from('generators').update(data).eq('id',id) : await sb.from('generators').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  closeModal('modal-gen'); showSaved(); toast(id?'GENERATOR UPDATED':'GENERATOR ADDED');
+  await loadAll();
+  if (currentCustomerId) openCustDetail(currentCustomerId);
+}
+
+async function deleteGenerator(id) {
+  if (!confirm('Delete this generator and all its service records?')) return;
+  await sb.from('generator_services').delete().eq('generator_id',id);
+  await sb.from('generators').delete().eq('id',id);
+  toast('GENERATOR DELETED'); await loadAll();
+  if (currentCustomerId) openCustDetail(currentCustomerId);
+}
+
+function openGenServiceModal(genId, svcId) {
+  populateSel('gen-svc-tech', DATA.crew.map(c=>({value:c.id,label:c.name})), 'Select Technician');
+  const s = svcId ? DATA.genServices.find(x=>x.id===svcId) : null;
+  document.getElementById('gen-svc-title').textContent = s ? 'VIEW / EDIT SERVICE' : 'LOG SERVICE';
+  document.getElementById('gen-svc-id').value    = s?.id||'';
+  document.getElementById('gen-svc-gen-id').value= genId;
+  document.getElementById('gen-svc-date').value  = s?.service_date||today();
+  document.getElementById('gen-svc-notes').value = s?.notes||'';
+  // Set next service date to 1 year from today by default
+  if (!s) {
+    const next = new Date(); next.setFullYear(next.getFullYear()+1);
+    document.getElementById('gen-svc-next').value = next.toISOString().split('T')[0];
+  } else {
+    document.getElementById('gen-svc-next').value = s.next_service_date||'';
+  }
+  if (s?.technician) document.getElementById('gen-svc-tech').value = s.technician;
+  // Populate checklist
+  document.getElementById('chk-oil').checked      = s?.chk_oil||false;
+  document.getElementById('chk-spark').checked    = s?.chk_spark_plugs||false;
+  document.getElementById('chk-air').checked      = s?.chk_air_filter||false;
+  document.getElementById('chk-fuel').checked     = s?.chk_fuel_filter||false;
+  document.getElementById('chk-battery').checked  = s?.chk_battery||false;
+  document.getElementById('chk-coolant').checked  = s?.chk_coolant||false;
+  document.getElementById('chk-belt').checked     = s?.chk_belt_hose||false;
+  document.getElementById('chk-transfer').checked = s?.chk_transfer_switch||false;
+  document.getElementById('chk-run').checked      = s?.chk_run_test||false;
+  document.getElementById('chk-leaks').checked    = s?.chk_leaks||false;
+  document.getElementById('chk-exhaust').checked  = s?.chk_exhaust||false;
+  openModal('modal-gen-service');
+}
+
+async function saveGeneratorService() {
+  const genId = document.getElementById('gen-svc-gen-id').value;
+  const date  = document.getElementById('gen-svc-date').value;
+  if (!genId||!date) { alert('Please fill in the service date.'); return; }
+  const id = document.getElementById('gen-svc-id').value;
+  const nextDate = document.getElementById('gen-svc-next').value;
+  const data = {
+    generator_id: genId,
+    service_date: date,
+    technician: document.getElementById('gen-svc-tech').value||null,
+    next_service_date: nextDate||null,
+    notes: document.getElementById('gen-svc-notes').value.trim(),
+    chk_oil:             document.getElementById('chk-oil').checked,
+    chk_spark_plugs:     document.getElementById('chk-spark').checked,
+    chk_air_filter:      document.getElementById('chk-air').checked,
+    chk_fuel_filter:     document.getElementById('chk-fuel').checked,
+    chk_battery:         document.getElementById('chk-battery').checked,
+    chk_coolant:         document.getElementById('chk-coolant').checked,
+    chk_belt_hose:       document.getElementById('chk-belt').checked,
+    chk_transfer_switch: document.getElementById('chk-transfer').checked,
+    chk_run_test:        document.getElementById('chk-run').checked,
+    chk_leaks:           document.getElementById('chk-leaks').checked,
+    chk_exhaust:         document.getElementById('chk-exhaust').checked,
+  };
+  const { error } = id ? await sb.from('generator_services').update(data).eq('id',id) : await sb.from('generator_services').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  closeModal('modal-gen-service'); showSaved(); toast('SERVICE RECORD SAVED');
+  sendPushToOther('⚙️ Generator serviced', `Service logged for ${date}`);
+  await loadAll();
+  if (currentCustomerId) openCustDetail(currentCustomerId);
+}
+
+async function deleteGenService(id) {
+  if (!confirm('Delete this service record?')) return;
+  await sb.from('generator_services').delete().eq('id',id);
+  toast('RECORD DELETED'); await loadAll();
+  if (currentCustomerId) openCustDetail(currentCustomerId);
+}
+
+// Check for upcoming/overdue service reminders on login
+function checkServiceReminders() {
+  const today = new Date();
+  const soon = new Date(); soon.setDate(soon.getDate()+30);
+  DATA.genServices.forEach(s => {
+    if (!s.next_service_date) return;
+    const due = new Date(s.next_service_date);
+    const gen = DATA.generators.find(g=>g.id===s.generator_id);
+    const cust = DATA.customers.find(c=>c.id===gen?.customer_id);
+    if (due < today) {
+      showBrowserNotif('⚠️ Generator Service Overdue', `${cust?.name||'A customer'} — ${gen?.make||''} ${gen?.model||''} was due ${s.next_service_date}`);
+    } else if (due <= soon) {
+      showBrowserNotif('🔔 Generator Service Due Soon', `${cust?.name||'A customer'} — ${gen?.make||''} ${gen?.model||''} due ${s.next_service_date}`);
+    }
+  });
+}
+
+// ═══════════════════════════════════════
+//  PUSH NOTIFICATIONS
+// ═══════════════════════════════════════
+async function enableNotifications() {
+  if (!('Notification' in window)) { alert('Notifications not supported in this browser.'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    document.getElementById('notif-btn').style.display = 'none';
+    toast('NOTIFICATIONS ENABLED');
+    showBrowserNotif('✓ Schmidt Electric Alerts', 'You\'ll now receive job and service reminders.');
+  }
+}
+
+function showBrowserNotif(title, body) {
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: 'https://raw.githubusercontent.com/SchmidtElectric/schmidt-electric-app/main/Schmidt%20Electric%20Company%20Logo%20(1).png' });
+  }
+}
+
+function sendPushToOther(title, body) {
+  // Show notification to current user as confirmation — cross-user push requires a service worker (future upgrade)
+  showBrowserNotif(title, body);
+}
+
+// Re-render generators when customer detail opens
+const _origOpenCustDetail = openCustDetail;
+openCustDetail = function(id) {
+  _origOpenCustDetail(id);
+  renderCustomerGenerators(id);
+};
 </script>
 </body>
 </html>
