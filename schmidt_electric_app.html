@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schmidt Electric LLC — Job Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:#0a0a0a; --dark:#111; --panel:#161616; --panel2:#1c1c1c;
+  --border:#272727; --border2:#333;
+  --yellow:#d4e600; --yellow-dim:#8fa000;
+  --text:#e8e8e8; --muted:#606060; --muted2:#888;
+  --red:#ff4444; --green:#44cc88; --orange:#ff9944;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--black);}
+::-webkit-scrollbar-thumb{background:var(--border2);}
+::-webkit-scrollbar-thumb:hover{background:var(--yellow);}
+
+/* ── LOGIN ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.login-box{background:var(--dark);border:1px solid var(--border2);padding:48px 44px;width:100%;max-width:400px;}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
+.bolt{width:28px;height:28px;background:var(--yellow);clip-path:polygon(60% 0%,100% 0%,40% 50%,100% 50%,0% 100%,30% 50%,0% 50%);flex-shrink:0;}
+.login-brand{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;}
+.login-brand span{color:var(--yellow);}
+.login-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--muted2);margin-bottom:28px;font-family:'DM Mono',monospace;}
+.form-group{margin-bottom:16px;}
+.form-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--muted2);text-transform:uppercase;display:block;margin-bottom:6px;}
+.form-input{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;width:100%;}
+.form-input:focus{border-color:var(--yellow);}
+.form-select{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;width:100%;cursor:pointer;}
+.form-select:focus{border-color:var(--yellow);}
+.form-textarea{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;width:100%;resize:vertical;min-height:72px;}
+.form-textarea:focus{border-color:var(--yellow);}
+option{background:var(--dark);}
+.btn-primary{background:var(--yellow);color:#000;border:none;padding:11px 22px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;cursor:pointer;transition:all .15s;width:100%;margin-top:8px;}
+.btn-primary:hover{background:#fff;}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-sm{width:auto;padding:7px 16px;font-size:14px;margin-top:0;}
+.btn-ghost{background:transparent;color:var(--muted2);border:1px solid var(--border);padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;}
+.btn-ghost:hover{border-color:var(--yellow);color:var(--yellow);}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(255,68,68,.3);padding:5px 10px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .15s;}
+.btn-danger:hover{background:rgba(255,68,68,.1);}
+.login-err{color:var(--red);font-size:12px;font-family:'DM Mono',monospace;margin-top:10px;display:none;}
+
+/* ── APP SHELL ── */
+#app{display:none;}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--dark);position:sticky;top:0;z-index:200;}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-bolt{width:24px;height:24px;background:var(--yellow);clip-path:polygon(60% 0%,100% 0%,40% 50%,100% 50%,0% 100%,30% 50%,0% 50%);}
+.nav-name{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;}
+.nav-name span{color:var(--yellow);}
+.nav-tabs{display:flex;gap:1px;}
+.nav-tab{padding:7px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all .15s;border-bottom:2px solid transparent;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--yellow);border-bottom-color:var(--yellow);}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-user{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;}
+.nav-signout{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);cursor:pointer;background:none;border:none;letter-spacing:1px;}
+.nav-signout:hover{color:var(--red);}
+.save-badge{font-family:'DM Mono',monospace;font-size:10px;color:var(--green);letter-spacing:1px;opacity:0;transition:opacity .4s;}
+.save-badge.show{opacity:1;}
+
+/* ── PAGES ── */
+.page{display:none;padding:22px 24px;max-width:1400px;margin:0 auto;animation:fadeUp .3s ease both;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:2px;}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--yellow);border-radius:50%;animation:spin .7s linear infinite;margin-right:10px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SEC HEADER ── */
+.sec-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;}
+.sec-title span{color:var(--yellow);}
+.sec-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* ── KPI STRIP ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);margin-bottom:18px;}
+.kpi{background:var(--panel);padding:16px 18px;position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--yellow);transform:scaleX(0);transform-origin:left;transition:transform .3s;}
+.kpi:hover::after{transform:scaleX(1);}
+.kpi-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+.kpi-val{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;line-height:1;}
+.kpi-val.y{color:var(--yellow);}.kpi-val.g{color:var(--green);}.kpi-val.r{color:var(--red);}
+
+/* ── PANEL ── */
+.panel{background:var(--panel);border:1px solid var(--border);padding:18px;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.panel-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;}
+.tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);background:var(--black);padding:3px 8px;border:1px solid var(--border);}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+.tbl td{padding:11px 10px;font-size:13px;border-bottom:1px solid #1a1a1a;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tbody tr{transition:background .12s;cursor:pointer;}
+.tbl tbody tr:hover td{background:rgba(212,230,0,.04);}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 8px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+.badge-active{background:rgba(68,204,136,.12);color:var(--green);border:1px solid rgba(68,204,136,.25);}
+.badge-pending{background:rgba(212,230,0,.1);color:var(--yellow);border:1px solid rgba(212,230,0,.2);}
+.badge-complete{background:rgba(102,102,102,.18);color:var(--muted2);border:1px solid var(--border);}
+.badge-won{background:rgba(68,204,136,.12);color:var(--green);border:1px solid rgba(68,204,136,.25);}
+.badge-lost{background:rgba(255,68,68,.1);color:var(--red);border:1px solid rgba(255,68,68,.25);}
+.badge-overbudget{background:rgba(255,68,68,.1);color:var(--red);border:1px solid rgba(255,68,68,.25);}
+.badge-onhold{background:rgba(255,153,68,.1);color:var(--orange);border:1px solid rgba(255,153,68,.25);}
+
+/* ── MARGIN BAR ── */
+.mbar{display:flex;align-items:center;gap:6px;}
+.mbar-bg{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px;}
+.mbar-fill{height:100%;border-radius:2px;}
+.mbar-pct{font-family:'DM Mono',monospace;font-size:11px;width:34px;text-align:right;}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.g32{display:grid;grid-template-columns:2fr 1fr;gap:14px;}
+.g23{display:grid;grid-template-columns:1fr 2fr;gap:14px;}
+.mb14{margin-bottom:14px;}.mb18{margin-bottom:18px;}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:center;justify-content:center;padding:16px;}
+.overlay.open{display:flex;}
+.modal{background:var(--dark);border:1px solid var(--border2);width:100%;max-width:580px;max-height:92vh;overflow-y:auto;animation:fadeUp .2s ease both;}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;}
+.modal-close{background:none;border:none;color:var(--muted2);font-size:20px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px;}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.form-row{display:grid;gap:12px;margin-bottom:12px;}
+.form-row.c2{grid-template-columns:1fr 1fr;}
+.form-row.c3{grid-template-columns:1fr 1fr 1fr;}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:36px 20px;color:var(--muted);}
+.empty-icon{font-size:32px;margin-bottom:8px;}
+.empty-msg{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--yellow);color:#000;padding:9px 18px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;z-index:999;transform:translateY(16px);opacity:0;transition:all .2s;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ── CREW CARD ── */
+.crew-card{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--black);border:1px solid var(--border);transition:border-color .2s;margin-bottom:8px;}
+.crew-card:hover{border-color:var(--yellow);}
+.avatar{width:32px;height:32px;background:var(--yellow);color:#000;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;}
+.avatar.dim{background:var(--border2);color:var(--muted);}
+
+/* ── VAN ROW ── */
+.van-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #1a1a1a;}
+.van-row:last-child{border-bottom:none;}
+.van-id-lbl{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--yellow);width:52px;letter-spacing:1px;}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  .kpi-strip{grid-template-columns:1fr 1fr;}
+  .g2,.g3,.g32,.g23{grid-template-columns:1fr;}
+  .nav-tabs{overflow-x:auto;scrollbar-width:none;}
+  .nav-tabs::-webkit-scrollbar{display:none;}
+  .nav-tab{white-space:nowrap;padding:7px 10px;font-size:9px;}
+  .page{padding:14px 12px;}
+  .tbl th,.tbl td{padding:8px 6px;font-size:11px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="bolt"></div>
+      <div class="login-brand">SCHMIDT <span>ELECTRIC</span> LLC</div>
+    </div>
+    <div class="login-title">SIGN IN</div>
+    <div class="login-sub">// JOB TRACKER · FIELD EDITION</div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="login-email" placeholder="you@schmidtelectricindy.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="login-pass" placeholder="••••••••">
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="signIn()">SIGN IN</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app">
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-bolt"></div>
+      <div class="nav-name">SCHMIDT <span>ELECTRIC</span></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="nav-tab" onclick="showPage('customers')">Customers</button>
+      <button class="nav-tab" onclick="showPage('estimates')">Estimates</button>
+      <button class="nav-tab" onclick="showPage('jobs')">Jobs</button>
+      <button class="nav-tab" onclick="showPage('crew')">Crew</button>
+      <button class="nav-tab" onclick="showPage('fleet')">Fleet</button>
+    </div>
+    <div class="nav-right">
+      <span class="save-badge" id="save-badge">✓ SAVED</span>
+      <span class="nav-user" id="nav-user"></span>
+      <button class="nav-signout" onclick="signOut()">SIGN OUT</button>
+    </div>
+  </nav>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="page active" id="page-dashboard">
+    <div class="sec-header mb18">
+      <div>
+        <div class="sec-title">JOB COST <span>&amp; PROFIT</span></div>
+        <div class="sec-sub" id="dash-sub">// Loading...</div>
+      </div>
+    </div>
+    <div class="kpi-strip mb18">
+      <div class="kpi"><div class="kpi-label">Total Revenue</div><div class="kpi-val y" id="kpi-rev">—</div></div>
+      <div class="kpi"><div class="kpi-label">Total Costs</div><div class="kpi-val" id="kpi-cost">—</div></div>
+      <div class="kpi"><div class="kpi-label">Gross Profit</div><div class="kpi-val g" id="kpi-profit">—</div></div>
+      <div class="kpi"><div class="kpi-label">Avg Margin</div><div class="kpi-val y" id="kpi-margin">—</div></div>
+      <div class="kpi"><div class="kpi-label">Open Bids</div><div class="kpi-val" id="kpi-bids">—</div></div>
+    </div>
+    <div class="g32 mb14">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">ACTIVE JOBS</div><button class="btn-primary btn-sm" onclick="showPage('jobs');openJobModal()">+ ADD JOB</button></div>
+        <div id="dash-jobs"><div class="loading"><div class="spin"></div>LOADING</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">RECENT ESTIMATES</div></div>
+        <div id="dash-estimates"><div class="loading"><div class="spin"></div>LOADING</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CUSTOMERS ══ -->
+  <div class="page" id="page-customers">
+    <div class="sec-header mb18">
+      <div><div class="sec-title">CUSTOMERS</div><div class="sec-sub" id="cust-sub">// 0 customers</div></div>
+      <button class="btn-primary btn-sm" onclick="openCustModal()">+ ADD CUSTOMER</button>
+    </div>
+    <div class="panel" style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Jobs</th><th></th></tr></thead>
+        <tbody id="cust-body"></tbody>
+      </table>
+      <div class="empty" id="cust-empty" style="display:none;"><div class="empty-icon">👥</div><div class="empty-msg">NO CUSTOMERS YET</div></div>
+    </div>
+  </div>
+
+  <!-- ══ ESTIMATES ══ -->
+  <div class="page" id="page-estimates">
+    <div class="sec-header mb18">
+      <div><div class="sec-title">ESTIMATES <span>&amp; BIDS</span></div><div class="sec-sub" id="est-sub">// 0 estimates</div></div>
+      <button class="btn-primary btn-sm" onclick="openEstModal()">+ NEW ESTIMATE</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="btn-ghost" onclick="filterEst('all')" id="ef-all" style="border-color:var(--yellow);color:var(--yellow);">ALL</button>
+      <button class="btn-ghost" onclick="filterEst('pending')" id="ef-pending">PENDING</button>
+      <button class="btn-ghost" onclick="filterEst('won')" id="ef-won">WON</button>
+      <button class="btn-ghost" onclick="filterEst('lost')" id="ef-lost">LOST</button>
+    </div>
+    <div class="panel" style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>Customer</th><th>Job Title</th><th>Amount</th><th>Date Sent</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="est-body"></tbody>
+      </table>
+      <div class="empty" id="est-empty" style="display:none;"><div class="empty-icon">📋</div><div class="empty-msg">NO ESTIMATES YET</div></div>
+    </div>
+  </div>
+
+  <!-- ══ JOBS ══ -->
+  <div class="page" id="page-jobs">
+    <div class="sec-header mb18">
+      <div><div class="sec-title">JOBS</div><div class="sec-sub" id="jobs-sub">// 0 jobs</div></div>
+      <button class="btn-primary btn-sm" onclick="openJobModal()">+ NEW JOB</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="btn-ghost" onclick="filterJobs('all')" id="jf-all" style="border-color:var(--yellow);color:var(--yellow);">ALL</button>
+      <button class="btn-ghost" onclick="filterJobs('active')" id="jf-active">ACTIVE</button>
+      <button class="btn-ghost" onclick="filterJobs('pending')" id="jf-pending">PENDING</button>
+      <button class="btn-ghost" onclick="filterJobs('complete')" id="jf-complete">COMPLETE</button>
+    </div>
+    <div class="panel" style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>Job / Customer</th><th>Type</th><th>Status</th><th>Contract</th><th>Mat. Cost</th><th>Labor Cost</th><th>Margin</th><th>Start</th><th></th></tr></thead>
+        <tbody id="jobs-body"></tbody>
+      </table>
+      <div class="empty" id="jobs-empty" style="display:none;"><div class="empty-icon">⚡</div><div class="empty-msg">NO JOBS YET</div></div>
+    </div>
+  </div>
+
+  <!-- ══ CREW ══ -->
+  <div class="page" id="page-crew">
+    <div class="sec-header mb18">
+      <div><div class="sec-title">CREW</div><div class="sec-sub" id="crew-sub">// 0 members</div></div>
+      <button class="btn-primary btn-sm" onclick="openCrewModal()">+ ADD MEMBER</button>
+    </div>
+    <div class="g2 mb14">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">CREW MEMBERS</div></div>
+        <div id="crew-list"></div>
+        <div class="empty" id="crew-empty" style="display:none;"><div class="empty-icon">👷</div><div class="empty-msg">NO CREW YET</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">LOG LABOR HOURS</div></div>
+        <div class="form-row c2">
+          <div class="form-group"><label class="form-label">Crew Member</label><select class="form-select" id="log-crew-sel"></select></div>
+          <div class="form-group"><label class="form-label">Job</label><select class="form-select" id="log-job-sel"></select></div>
+        </div>
+        <div class="form-row c3">
+          <div class="form-group"><label class="form-label">Hours</label><input class="form-input" type="number" id="log-hrs" placeholder="8" min="0" step="0.5"></div>
+          <div class="form-group"><label class="form-label">Rate ($/hr)</label><input class="form-input" type="number" id="log-rate" placeholder="45" min="0"></div>
+          <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="log-date"></div>
+        </div>
+        <button class="btn-primary" onclick="logHours()">LOG HOURS</button>
+        <div style="margin-top:16px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;margin-bottom:10px;">RECENT LOG</div>
+          <div id="log-list" style="max-height:200px;overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Materials log -->
+    <div class="g2">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">LOG MATERIALS</div></div>
+        <div class="form-row c2">
+          <div class="form-group"><label class="form-label">Job</label><select class="form-select" id="mat-job-sel"></select></div>
+          <div class="form-group"><label class="form-label">Category</label>
+            <select class="form-select" id="mat-cat-sel">
+              <option>Wire &amp; Conduit</option><option>Panels &amp; Breakers</option>
+              <option>Fixtures &amp; Lighting</option><option>Tools &amp; Hardware</option>
+              <option>Generator Parts</option><option>Switches &amp; Outlets</option><option>Misc / Supplies</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row c2">
+          <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="mat-desc" placeholder="e.g. 12/2 Romex 250ft"></div>
+          <div class="form-group"><label class="form-label">Amount ($)</label><input class="form-input" type="number" id="mat-amount" placeholder="0.00" step="0.01"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="mat-date"></div>
+        </div>
+        <button class="btn-primary" onclick="logMaterial()">LOG MATERIALS</button>
+      </div>
+      <div class="panel" style="overflow-x:auto;">
+        <div class="panel-head"><div class="panel-title">RECENT MATERIALS</div></div>
+        <div id="mat-list" style="max-height:280px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FLEET ══ -->
+  <div class="page" id="page-fleet">
+    <div class="sec-header mb18">
+      <div><div class="sec-title">FLEET <span>TRACKER</span></div><div class="sec-sub" id="fleet-sub">// 0 vehicles</div></div>
+      <button class="btn-primary btn-sm" onclick="openVanModal()">+ ADD VEHICLE</button>
+    </div>
+    <div class="g2 mb14">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">VEHICLES</div></div>
+        <div id="van-list"></div>
+        <div class="empty" id="van-empty" style="display:none;"><div class="empty-icon">🚐</div><div class="empty-msg">NO VEHICLES YET</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">LOG MAINTENANCE</div></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Vehicle</label><select class="form-select" id="maint-van-sel"></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Type</label>
+            <select class="form-select" id="maint-type-sel">
+              <option>Oil Change</option><option>Tire Rotation</option><option>Tire Replacement</option>
+              <option>Brake Service</option><option>Transmission Fluid</option><option>Coolant / Antifreeze</option>
+              <option>Power Steering Fluid</option><option>Air Filter</option><option>Battery Replacement</option>
+              <option>Inspection / Registration</option><option>Repair</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row c2">
+          <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="maint-date"></div>
+          <div class="form-group"><label class="form-label">Mileage</label><input class="form-input" type="number" id="maint-miles" placeholder="12400"></div>
+        </div>
+        <div class="form-row c2">
+          <div class="form-group"><label class="form-label">Cost ($)</label><input class="form-input" type="number" id="maint-cost" placeholder="0.00" step="0.01"></div>
+          <div class="form-group"><label class="form-label">Next Due</label><input class="form-input" id="maint-next" placeholder="e.g. 3 months"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Notes</label><input class="form-input" id="maint-notes" placeholder="Shop, fluid brand, etc."></div>
+        </div>
+        <button class="btn-primary" onclick="logMaint()">LOG MAINTENANCE</button>
+      </div>
+    </div>
+    <div class="panel" style="overflow-x:auto;">
+      <div class="panel-head"><div class="panel-title">MAINTENANCE LOG</div><div class="tag" id="maint-tag">0 ENTRIES</div></div>
+      <table class="tbl">
+        <thead><tr><th>Date</th><th>Vehicle</th><th>Type</th><th>Notes</th><th>Mileage</th><th>Cost</th><th>Next Due</th><th></th></tr></thead>
+        <tbody id="maint-body"></tbody>
+      </table>
+      <div class="empty" id="maint-empty" style="display:none;"><div class="empty-icon">🔧</div><div class="empty-msg">NO MAINTENANCE LOGGED YET</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- CUSTOMER -->
+<div class="overlay" id="modal-cust">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="cust-modal-title">NEW CUSTOMER</div><button class="modal-close" onclick="closeModal('modal-cust')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="cust-id">
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Company / Customer Name</label><input class="form-input" id="cust-name" placeholder="e.g. Greenfield Industrial"></div>
+        <div class="form-group"><label class="form-label">Contact Person</label><input class="form-input" id="cust-contact" placeholder="e.g. John Smith"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="cust-phone" placeholder="812-000-0000"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="cust-email" placeholder="john@company.com"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Address</label><input class="form-input" id="cust-address" placeholder="123 Main St"></div>
+        <div class="form-group"><label class="form-label">City</label><input class="form-input" id="cust-city" placeholder="Mitchell"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="cust-notes" placeholder="Any notes about this customer..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-cust')">CANCEL</button>
+      <button class="btn-primary btn-sm" onclick="saveCustomer()">SAVE CUSTOMER</button>
+    </div>
+  </div>
+</div>
+
+<!-- ESTIMATE -->
+<div class="overlay" id="modal-est">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="est-modal-title">NEW ESTIMATE</div><button class="modal-close" onclick="closeModal('modal-est')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="est-id">
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Customer</label><select class="form-select" id="est-cust-sel"></select></div>
+        <div class="form-group"><label class="form-label">Job Title / Description</label><input class="form-input" id="est-title" placeholder="e.g. Panel Upgrade"></div>
+      </div>
+      <div class="form-row c3">
+        <div class="form-group"><label class="form-label">Bid Amount ($)</label><input class="form-input" type="number" id="est-amount" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Date Sent</label><input class="form-input" type="date" id="est-date"></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-select" id="est-status">
+            <option value="pending">Pending</option>
+            <option value="won">Won</option>
+            <option value="lost">Lost</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="est-notes" placeholder="Scope of work, special considerations..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-est')">CANCEL</button>
+      <button class="btn-primary btn-sm" onclick="saveEstimate()">SAVE ESTIMATE</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOB -->
+<div class="overlay" id="modal-job">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="job-modal-title">NEW JOB</div><button class="modal-close" onclick="closeModal('modal-job')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="job-id">
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Customer</label><select class="form-select" id="job-cust-sel"></select></div>
+        <div class="form-group"><label class="form-label">Job Name</label><input class="form-input" id="job-name" placeholder="e.g. Panel Upgrade"></div>
+      </div>
+      <div class="form-row c3">
+        <div class="form-group"><label class="form-label">Type</label>
+          <select class="form-select" id="job-type">
+            <option>Commercial – New Construction</option><option>Commercial – Renovation</option>
+            <option>Commercial – Lighting</option><option>Residential – New Construction</option>
+            <option>Residential – Service Upgrade</option><option>Residential – Multi-Unit</option>
+            <option>Industrial</option><option>Government / Municipal</option>
+            <option>Generator Install</option><option>Service Call</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-select" id="job-status">
+            <option value="active">Active</option><option value="pending">Pending</option>
+            <option value="complete">Complete</option><option value="onhold">On Hold</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Start Date</label><input class="form-input" type="date" id="job-start"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Contract Value ($)</label><input class="form-input" type="number" id="job-contract" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Linked Estimate (optional)</label><select class="form-select" id="job-est-sel"></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="job-notes" placeholder="Scope, access info, special requirements..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-job')">CANCEL</button>
+      <button class="btn-primary btn-sm" onclick="saveJob()">SAVE JOB</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREW -->
+<div class="overlay" id="modal-crew">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="crew-modal-title">ADD CREW MEMBER</div><button class="modal-close" onclick="closeModal('modal-crew')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="crew-id">
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="crew-name" placeholder="e.g. Jake Schmidt"></div>
+        <div class="form-group"><label class="form-label">Role</label>
+          <select class="form-select" id="crew-role">
+            <option>Master Electrician</option><option>Journeyman Electrician</option>
+            <option>Apprentice</option><option>Foreman</option><option>Helper</option><option>Office / Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Default Rate ($/hr)</label><input class="form-input" type="number" id="crew-rate" placeholder="45"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="crew-phone" placeholder="317-000-0000"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-crew')">CANCEL</button>
+      <button class="btn-primary btn-sm" onclick="saveCrew()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- VAN -->
+<div class="overlay" id="modal-van">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="van-modal-title">ADD VEHICLE</div><button class="modal-close" onclick="closeModal('modal-van')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="van-id">
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Vehicle ID</label><input class="form-input" id="van-vanid" placeholder="e.g. VAN 1"></div>
+        <div class="form-group"><label class="form-label">Year / Make / Model</label><input class="form-input" id="van-model" placeholder="e.g. 2022 RAM ProMaster"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label class="form-label">Driver</label><select class="form-select" id="van-driver-sel"></select></div>
+        <div class="form-group"><label class="form-label">Current Mileage</label><input class="form-input" type="number" id="van-miles" placeholder="12400"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-van')">CANCEL</button>
+      <button class="btn-primary btn-sm" onclick="saveVan()">SAVE VEHICLE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  SUPABASE INIT
+// ═══════════════════════════════════════
+const SUPA_URL = 'https://uejskiqfojtuactgmwia.supabase.co';
+const SUPA_KEY = 'sb_publishable_dYhzWQxHPVM1wba9oTmYTA_j2uegYep';
+const { createClient } = supabase;
+const sb = createClient(SUPA_URL, SUPA_KEY);
+
+// ═══════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════
+async function signIn() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'SIGNING IN...';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    err.textContent = 'Invalid email or password. Please try again.';
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'SIGN IN';
+  } else {
+    await bootApp();
+  }
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').textContent = 'SIGN IN';
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') signIn(); });
+
+// Check existing session on load
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) bootApp();
+});
+
+// ═══════════════════════════════════════
+//  BOOT APP
+// ═══════════════════════════════════════
+let currentUser = null;
+
+async function bootApp() {
+  const { data: { user } } = await sb.auth.getUser();
+  currentUser = user;
+  const name = user.email === 'megan@schmidtelectricindy.com' ? 'Megan' : 'Randy';
+  document.getElementById('nav-user').textContent = name.toUpperCase();
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('log-date').value = today();
+  document.getElementById('mat-date').value = today();
+  document.getElementById('maint-date').value = today();
+  document.getElementById('est-date').value = today();
+  document.getElementById('job-start').value = today();
+  await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════
+const fmt = n => '$' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+const fmtPct = n => (n||0).toFixed(1) + '%';
+const today = () => new Date().toISOString().split('T')[0];
+const initials = name => name.split(' ').map(w=>w[0]).join('').toUpperCase().substr(0,2);
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function showSaved() {
+  const b = document.getElementById('save-badge');
+  b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 2000);
+}
+
+function statusBadge(s) {
+  const map = {active:'badge-active',pending:'badge-pending',complete:'badge-complete',won:'badge-won',lost:'badge-lost',overbudget:'badge-overbudget',onhold:'badge-onhold'};
+  const lbl = {active:'Active',pending:'Pending',complete:'Complete',won:'Won',lost:'Lost',overbudget:'Over Budget',onhold:'On Hold'};
+  return `<span class="badge ${map[s]||'badge-pending'}">${lbl[s]||s}</span>`;
+}
+
+function marginBar(pct) {
+  const c = Math.min(Math.max(pct,0),100);
+  const col = pct<10?'var(--red)':pct<25?'var(--yellow)':'var(--green)';
+  const tcol = pct<10?'var(--red)':pct<25?'var(--text)':'var(--green)';
+  return `<div class="mbar"><div class="mbar-bg"><div class="mbar-fill" style="width:${c}%;background:${col};"></div></div><div class="mbar-pct" style="color:${tcol};">${fmtPct(pct)}</div></div>`;
+}
+
+function populateSel(id, opts, blankLabel) {
+  const el = document.getElementById(id); if(!el) return;
+  const cur = el.value;
+  el.innerHTML = (blankLabel ? `<option value="">— ${blankLabel} —</option>` : '') + opts.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
+  if(cur) el.value = cur;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+
+// ═══════════════════════════════════════
+//  DATA CACHE
+// ═══════════════════════════════════════
+let DATA = { customers:[], estimates:[], jobs:[], crew:[], laborLogs:[], materials:[], vans:[], maintLogs:[] };
+
+async function loadAll() {
+  const [c,e,j,cr,ll,m,v,ml] = await Promise.all([
+    sb.from('customers').select('*').order('name'),
+    sb.from('estimates').select('*').order('created_at', {ascending:false}),
+    sb.from('jobs').select('*').order('created_at', {ascending:false}),
+    sb.from('crew').select('*').order('name'),
+    sb.from('labor_logs').select('*').order('log_date', {ascending:false}),
+    sb.from('materials').select('*').order('mat_date', {ascending:false}),
+    sb.from('vans').select('*').order('van_id'),
+    sb.from('maintenance_logs').select('*').order('log_date', {ascending:false}),
+  ]);
+  DATA.customers  = c.data  || [];
+  DATA.estimates  = e.data  || [];
+  DATA.jobs       = j.data  || [];
+  DATA.crew       = cr.data || [];
+  DATA.laborLogs  = ll.data || [];
+  DATA.materials  = m.data  || [];
+  DATA.vans       = v.data  || [];
+  DATA.maintLogs  = ml.data || [];
+  renderAll();
+}
+
+// ═══════════════════════════════════════
+//  JOB STATS
+// ═══════════════════════════════════════
+function jobStats(job) {
+  const laborCost = DATA.laborLogs.filter(l=>l.job_id===job.id).reduce((s,l)=>s+Number(l.hours||0)*Number(l.rate||0),0);
+  const matCost   = DATA.materials.filter(m=>m.job_id===job.id).reduce((s,m)=>s+Number(m.amount||0),0);
+  const totalCost = laborCost + matCost;
+  const profit    = Number(job.contract||0) - totalCost;
+  const margin    = job.contract>0 ? (profit/Number(job.contract))*100 : 0;
+  return { laborCost, matCost, totalCost, profit, margin };
+}
+
+// ═══════════════════════════════════════
+//  RENDER ALL
+// ═══════════════════════════════════════
+function renderAll() {
+  renderDashboard();
+  renderCustomers();
+  renderEstimates();
+  renderJobs();
+  renderCrew();
+  renderFleet();
+  refreshDropdowns();
+}
+
+// ═══════════════════════════════════════
+//  REFRESH DROPDOWNS
+// ═══════════════════════════════════════
+function refreshDropdowns() {
+  populateSel('est-cust-sel',  DATA.customers.map(c=>({value:c.id,label:c.name})), 'Select Customer');
+  populateSel('job-cust-sel',  DATA.customers.map(c=>({value:c.id,label:c.name})), 'Select Customer');
+  populateSel('job-est-sel',   DATA.estimates.map(e=>({value:e.id,label:e.title})), 'None');
+  populateSel('log-crew-sel',  DATA.crew.map(c=>({value:c.id,label:c.name})), 'Select Crew');
+  populateSel('log-job-sel',   DATA.jobs.filter(j=>j.status==='active').map(j=>({value:j.id,label:j.name})), 'Select Job');
+  populateSel('mat-job-sel',   DATA.jobs.filter(j=>j.status==='active').map(j=>({value:j.id,label:j.name})), 'Select Job');
+  populateSel('van-driver-sel',DATA.crew.map(c=>({value:c.id,label:c.name})), 'Unassigned');
+  populateSel('maint-van-sel', DATA.vans.map(v=>({value:v.id,label:v.van_id+(v.model?' – '+v.model:'')})), 'Select Vehicle');
+}
+
+// ═══════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════
+function renderDashboard() {
+  let totalRev=0, totalCost=0;
+  DATA.jobs.forEach(j => { totalRev += Number(j.contract||0); totalCost += jobStats(j).totalCost; });
+  const profit = totalRev - totalCost;
+  const margin = totalRev > 0 ? (profit/totalRev)*100 : 0;
+  const openBids = DATA.estimates.filter(e=>e.status==='pending').length;
+
+  document.getElementById('kpi-rev').textContent    = fmt(totalRev);
+  document.getElementById('kpi-cost').textContent   = fmt(totalCost);
+  document.getElementById('kpi-profit').textContent = fmt(profit);
+  document.getElementById('kpi-profit').className   = 'kpi-val ' + (profit>=0?'g':'r');
+  document.getElementById('kpi-margin').textContent = fmtPct(margin);
+  document.getElementById('kpi-bids').textContent   = openBids;
+  document.getElementById('dash-sub').textContent   = `// ${DATA.jobs.length} JOBS · ${DATA.customers.length} CUSTOMERS · ${DATA.crew.length} CREW`;
+
+  // Active jobs
+  const activeJobs = DATA.jobs.filter(j=>j.status==='active').slice(0,6);
+  document.getElementById('dash-jobs').innerHTML = activeJobs.length ? `
+    <table class="tbl"><thead><tr><th>Job</th><th>Customer</th><th>Contract</th><th>Margin</th></tr></thead>
+    <tbody>${activeJobs.map(j=>{
+      const cust = DATA.customers.find(c=>c.id===j.customer_id);
+      const s = jobStats(j);
+      return `<tr onclick="showPage('jobs')">
+        <td><div style="font-weight:600;font-size:13px;">${j.name}</div><div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${j.type||''}</div></td>
+        <td style="font-size:12px;color:var(--muted2);">${cust?cust.name:'—'}</td>
+        <td style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--yellow);">${fmt(j.contract)}</td>
+        <td>${marginBar(s.margin)}</td>
+      </tr>`;
+    }).join('')}</tbody></table>` : '<div class="empty"><div class="empty-icon">⚡</div><div class="empty-msg">NO ACTIVE JOBS</div></div>';
+
+  // Recent estimates
+  const recentEst = DATA.estimates.slice(0,6);
+  document.getElementById('dash-estimates').innerHTML = recentEst.length ? recentEst.map(e=>{
+    const cust = DATA.customers.find(c=>c.id===e.customer_id);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1a1a;">
+      <div>
+        <div style="font-weight:600;font-size:13px;">${e.title}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${cust?cust.name:'—'} · ${e.date_sent||'—'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--yellow);">${fmt(e.amount)}</div>
+        ${statusBadge(e.status)}
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty"><div class="empty-icon">📋</div><div class="empty-msg">NO ESTIMATES YET</div></div>';
+}
+
+// ═══════════════════════════════════════
+//  CUSTOMERS
+// ═══════════════════════════════════════
+function renderCustomers() {
+  document.getElementById('cust-sub').textContent = `// ${DATA.customers.length} customers`;
+  const tbody = document.getElementById('cust-body');
+  const empty = document.getElementById('cust-empty');
+  if (!DATA.customers.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = DATA.customers.map(c => {
+    const jobCount = DATA.jobs.filter(j=>j.customer_id===c.id).length;
+    return `<tr onclick="editCustomer('${c.id}')">
+      <td><div style="font-weight:600;">${c.name}</div></td>
+      <td style="color:var(--muted2);font-size:12px;">${c.contact||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;">${c.phone||'—'}</td>
+      <td style="font-size:12px;color:var(--muted2);">${c.email||'—'}</td>
+      <td style="font-size:12px;color:var(--muted2);">${c.city||'—'}</td>
+      <td><span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--yellow);">${jobCount}</span></td>
+      <td><button class="btn-danger" onclick="event.stopPropagation();deleteCustomer('${c.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  ESTIMATES
+// ═══════════════════════════════════════
+let estFilter = 'all';
+function filterEst(f) {
+  estFilter = f;
+  document.querySelectorAll('[id^=ef-]').forEach(b=>{b.style.borderColor='';b.style.color='';});
+  const el = document.getElementById('ef-'+f);
+  if(el){el.style.borderColor='var(--yellow)';el.style.color='var(--yellow)';}
+  renderEstimates();
+}
+
+function renderEstimates() {
+  document.getElementById('est-sub').textContent = `// ${DATA.estimates.length} estimates · ${DATA.estimates.filter(e=>e.status==='won').length} won`;
+  let list = estFilter==='all' ? DATA.estimates : DATA.estimates.filter(e=>e.status===estFilter);
+  const tbody = document.getElementById('est-body');
+  const empty = document.getElementById('est-empty');
+  if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = list.map(e => {
+    const cust = DATA.customers.find(c=>c.id===e.customer_id);
+    return `<tr onclick="editEstimate('${e.id}')">
+      <td style="font-weight:600;">${cust?cust.name:'—'}</td>
+      <td>${e.title}</td>
+      <td style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--yellow);">${fmt(e.amount)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2);">${e.date_sent||'—'}</td>
+      <td>${statusBadge(e.status)}</td>
+      <td style="font-size:12px;color:var(--muted2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.notes||'—'}</td>
+      <td><button class="btn-danger" onclick="event.stopPropagation();deleteEstimate('${e.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  JOBS
+// ═══════════════════════════════════════
+let jobFilter = 'all';
+function filterJobs(f) {
+  jobFilter = f;
+  document.querySelectorAll('[id^=jf-]').forEach(b=>{b.style.borderColor='';b.style.color='';});
+  const el = document.getElementById('jf-'+f);
+  if(el){el.style.borderColor='var(--yellow)';el.style.color='var(--yellow)';}
+  renderJobs();
+}
+
+function renderJobs() {
+  document.getElementById('jobs-sub').textContent = `// ${DATA.jobs.length} total · ${DATA.jobs.filter(j=>j.status==='active').length} active`;
+  let list = jobFilter==='all' ? DATA.jobs : DATA.jobs.filter(j=>j.status===jobFilter);
+  const tbody = document.getElementById('jobs-body');
+  const empty = document.getElementById('jobs-empty');
+  if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = list.map(j => {
+    const cust = DATA.customers.find(c=>c.id===j.customer_id);
+    const s = jobStats(j);
+    return `<tr onclick="editJob('${j.id}')">
+      <td><div style="font-weight:600;">${j.name}</div><div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${cust?cust.name:'No customer'}</div></td>
+      <td style="font-size:11px;color:var(--muted2);">${j.type||'—'}</td>
+      <td>${statusBadge(j.status)}</td>
+      <td style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--yellow);">${fmt(j.contract)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;">${fmt(s.matCost)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;">${fmt(s.laborCost)}</td>
+      <td>${marginBar(s.margin)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2);">${j.start_date||'—'}</td>
+      <td><button class="btn-danger" onclick="event.stopPropagation();deleteJob('${j.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  CREW
+// ═══════════════════════════════════════
+function renderCrew() {
+  document.getElementById('crew-sub').textContent = `// ${DATA.crew.length} members`;
+  const list = document.getElementById('crew-list');
+  const empty = document.getElementById('crew-empty');
+  if (!DATA.crew.length) { list.innerHTML=''; empty.style.display='block'; }
+  else {
+    empty.style.display='none';
+    list.innerHTML = DATA.crew.map(c => {
+      const totalHrs = DATA.laborLogs.filter(l=>l.crew_id===c.id).reduce((s,l)=>s+Number(l.hours||0),0);
+      return `<div class="crew-card">
+        <div class="avatar">${initials(c.name)}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:13px;">${c.name}</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${c.role} · ${fmt(c.rate)}/hr · ${totalHrs} total hrs</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-ghost" style="padding:4px 8px;font-size:10px;" onclick="editCrew('${c.id}')">EDIT</button>
+          <button class="btn-danger" onclick="deleteCrew('${c.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Labor log list
+  const logList = document.getElementById('log-list');
+  const recent = DATA.laborLogs.slice(0,10);
+  logList.innerHTML = recent.length ? recent.map(l=>{
+    const cr = DATA.crew.find(c=>c.id===l.crew_id);
+    const jb = DATA.jobs.find(j=>j.id===l.job_id);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #1a1a1a;font-size:12px;">
+      <div>
+        <div style="font-weight:600;">${cr?cr.name:'?'}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${jb?jb.name:'?'} · ${l.log_date||'—'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--yellow);">${l.hours} hrs</div>
+        <button class="btn-danger" onclick="deleteLaborLog('${l.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:11px;font-family:DM Mono,monospace;padding:10px 0;">No logs yet</div>';
+
+  // Materials list
+  const matList = document.getElementById('mat-list');
+  const recentMat = DATA.materials.slice(0,10);
+  matList.innerHTML = recentMat.length ? recentMat.map(m=>{
+    const jb = DATA.jobs.find(j=>j.id===m.job_id);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:12px;">
+      <div>
+        <div style="font-weight:600;">${m.description||m.category}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${jb?jb.name:'?'} · ${m.category} · ${m.mat_date||'—'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--yellow);">${fmt(m.amount)}</div>
+        <button class="btn-danger" onclick="deleteMaterial('${m.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:11px;font-family:DM Mono,monospace;padding:10px 0;">No materials logged yet</div>';
+}
+
+// ═══════════════════════════════════════
+//  FLEET
+// ═══════════════════════════════════════
+function renderFleet() {
+  document.getElementById('fleet-sub').textContent = `// ${DATA.vans.length} vehicles`;
+  const list = document.getElementById('van-list');
+  const empty = document.getElementById('van-empty');
+  if (!DATA.vans.length) { list.innerHTML=''; empty.style.display='block'; }
+  else {
+    empty.style.display='none';
+    list.innerHTML = DATA.vans.map(v=>{
+      const driver = DATA.crew.find(c=>c.id===v.driver_id);
+      const last = DATA.maintLogs.filter(m=>m.van_id===v.id).sort((a,b)=>b.log_date.localeCompare(a.log_date))[0];
+      return `<div class="van-row">
+        <div class="van-id-lbl">${v.van_id}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:13px;">${driver?driver.name:'Unassigned'}</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${v.model||'—'} · ${Number(v.miles||0).toLocaleString()} mi</div>
+          ${last?`<div style="font-size:10px;color:var(--yellow-dim);font-family:'DM Mono',monospace;">LAST: ${last.type} · ${last.log_date}${last.next_due?' · NEXT: '+last.next_due:''}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-ghost" style="padding:4px 8px;font-size:10px;" onclick="editVan('${v.id}')">EDIT</button>
+          <button class="btn-danger" onclick="deleteVan('${v.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Maintenance log table
+  const tbody = document.getElementById('maint-body');
+  const maintEmpty = document.getElementById('maint-empty');
+  document.getElementById('maint-tag').textContent = DATA.maintLogs.length + ' ENTRIES';
+  if (!DATA.maintLogs.length) { tbody.innerHTML=''; maintEmpty.style.display='block'; }
+  else {
+    maintEmpty.style.display='none';
+    tbody.innerHTML = DATA.maintLogs.map(m=>{
+      const van = DATA.vans.find(v=>v.id===m.van_id);
+      return `<tr>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${m.log_date||'—'}</td>
+        <td style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--yellow);">${van?van.van_id:'—'}</td>
+        <td style="font-size:12px;">${m.type}</td>
+        <td style="font-size:12px;color:var(--muted2);">${m.description||'—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;">${m.miles?Number(m.miles).toLocaleString()+' mi':'—'}</td>
+        <td style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);">${m.cost?fmt(m.cost):'—'}</td>
+        <td style="font-size:11px;color:var(--muted2);">${m.next_due||'—'}</td>
+        <td><button class="btn-danger" onclick="deleteMaintLog('${m.id}')">✕</button></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ═══════════════════════════════════════
+//  PAGE NAV
+// ═══════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>{ if(t.textContent.trim().toLowerCase()===name.toLowerCase()) t.classList.add('active'); });
+}
+
+// ═══════════════════════════════════════
+//  CRUD — CUSTOMERS
+// ═══════════════════════════════════════
+function openCustModal(c) {
+  document.getElementById('cust-modal-title').textContent = c ? 'EDIT CUSTOMER' : 'NEW CUSTOMER';
+  document.getElementById('cust-id').value      = c?.id||'';
+  document.getElementById('cust-name').value    = c?.name||'';
+  document.getElementById('cust-contact').value = c?.contact||'';
+  document.getElementById('cust-phone').value   = c?.phone||'';
+  document.getElementById('cust-email').value   = c?.email||'';
+  document.getElementById('cust-address').value = c?.address||'';
+  document.getElementById('cust-city').value    = c?.city||'';
+  document.getElementById('cust-notes').value   = c?.notes||'';
+  openModal('modal-cust');
+}
+function editCustomer(id) { openCustModal(DATA.customers.find(c=>c.id===id)); }
+
+async function saveCustomer() {
+  const name = document.getElementById('cust-name').value.trim();
+  if (!name) { alert('Customer name is required.'); return; }
+  const id = document.getElementById('cust-id').value;
+  const data = { name, contact:document.getElementById('cust-contact').value.trim(), phone:document.getElementById('cust-phone').value.trim(), email:document.getElementById('cust-email').value.trim(), address:document.getElementById('cust-address').value.trim(), city:document.getElementById('cust-city').value.trim(), notes:document.getElementById('cust-notes').value.trim() };
+  const { error } = id ? await sb.from('customers').update(data).eq('id',id) : await sb.from('customers').insert(data);
+  if (error) { alert('Error saving: '+error.message); return; }
+  closeModal('modal-cust'); showSaved(); toast(id?'CUSTOMER UPDATED':'CUSTOMER ADDED');
+  await loadAll();
+}
+
+async function deleteCustomer(id) {
+  if (!confirm('Delete this customer?')) return;
+  await sb.from('customers').delete().eq('id',id);
+  toast('CUSTOMER DELETED'); await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  CRUD — ESTIMATES
+// ═══════════════════════════════════════
+function openEstModal(e) {
+  refreshDropdowns();
+  document.getElementById('est-modal-title').textContent = e ? 'EDIT ESTIMATE' : 'NEW ESTIMATE';
+  document.getElementById('est-id').value     = e?.id||'';
+  document.getElementById('est-title').value  = e?.title||'';
+  document.getElementById('est-amount').value = e?.amount||'';
+  document.getElementById('est-date').value   = e?.date_sent||today();
+  document.getElementById('est-status').value = e?.status||'pending';
+  document.getElementById('est-notes').value  = e?.notes||'';
+  if (e?.customer_id) document.getElementById('est-cust-sel').value = e.customer_id;
+  openModal('modal-est');
+}
+function editEstimate(id) { openEstModal(DATA.estimates.find(e=>e.id===id)); }
+
+async function saveEstimate() {
+  const title = document.getElementById('est-title').value.trim();
+  if (!title) { alert('Title is required.'); return; }
+  const id = document.getElementById('est-id').value;
+  const data = { title, customer_id:document.getElementById('est-cust-sel').value||null, amount:parseFloat(document.getElementById('est-amount').value)||0, date_sent:document.getElementById('est-date').value, status:document.getElementById('est-status').value, notes:document.getElementById('est-notes').value.trim() };
+  const { error } = id ? await sb.from('estimates').update(data).eq('id',id) : await sb.from('estimates').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  closeModal('modal-est'); showSaved(); toast(id?'ESTIMATE UPDATED':'ESTIMATE SAVED');
+  await loadAll();
+}
+
+async function deleteEstimate(id) {
+  if (!confirm('Delete this estimate?')) return;
+  await sb.from('estimates').delete().eq('id',id);
+  toast('ESTIMATE DELETED'); await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  CRUD — JOBS
+// ═══════════════════════════════════════
+function openJobModal(j) {
+  refreshDropdowns();
+  document.getElementById('job-modal-title').textContent = j ? 'EDIT JOB' : 'NEW JOB';
+  document.getElementById('job-id').value       = j?.id||'';
+  document.getElementById('job-name').value     = j?.name||'';
+  document.getElementById('job-type').value     = j?.type||'Commercial – New Construction';
+  document.getElementById('job-status').value   = j?.status||'active';
+  document.getElementById('job-start').value    = j?.start_date||today();
+  document.getElementById('job-contract').value = j?.contract||'';
+  document.getElementById('job-notes').value    = j?.notes||'';
+  if (j?.customer_id) document.getElementById('job-cust-sel').value = j.customer_id;
+  if (j?.estimate_id) document.getElementById('job-est-sel').value  = j.estimate_id;
+  openModal('modal-job');
+}
+function editJob(id) { openJobModal(DATA.jobs.find(j=>j.id===id)); }
+
+async function saveJob() {
+  const name = document.getElementById('job-name').value.trim();
+  if (!name) { alert('Job name is required.'); return; }
+  const id = document.getElementById('job-id').value;
+  const data = { name, type:document.getElementById('job-type').value, status:document.getElementById('job-status').value, start_date:document.getElementById('job-start').value, contract:parseFloat(document.getElementById('job-contract').value)||0, customer_id:document.getElementById('job-cust-sel').value||null, estimate_id:document.getElementById('job-est-sel').value||null, notes:document.getElementById('job-notes').value.trim() };
+  const { error } = id ? await sb.from('jobs').update(data).eq('id',id) : await sb.from('jobs').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  closeModal('modal-job'); showSaved(); toast(id?'JOB UPDATED':'JOB ADDED');
+  await loadAll();
+}
+
+async function deleteJob(id) {
+  if (!confirm('Delete this job?')) return;
+  await sb.from('jobs').delete().eq('id',id);
+  toast('JOB DELETED'); await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  CRUD — CREW
+// ═══════════════════════════════════════
+function openCrewModal(c) {
+  document.getElementById('crew-modal-title').textContent = c ? 'EDIT CREW MEMBER' : 'ADD CREW MEMBER';
+  document.getElementById('crew-id').value    = c?.id||'';
+  document.getElementById('crew-name').value  = c?.name||'';
+  document.getElementById('crew-role').value  = c?.role||'Journeyman Electrician';
+  document.getElementById('crew-rate').value  = c?.rate||'';
+  document.getElementById('crew-phone').value = c?.phone||'';
+  openModal('modal-crew');
+}
+function editCrew(id) { openCrewModal(DATA.crew.find(c=>c.id===id)); }
+
+async function saveCrew() {
+  const name = document.getElementById('crew-name').value.trim();
+  if (!name) { alert('Name required.'); return; }
+  const id = document.getElementById('crew-id').value;
+  const data = { name, role:document.getElementById('crew-role').value, rate:parseFloat(document.getElementById('crew-rate').value)||0, phone:document.getElementById('crew-phone').value.trim() };
+  const { error } = id ? await sb.from('crew').update(data).eq('id',id) : await sb.from('crew').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  closeModal('modal-crew'); showSaved(); toast(id?'CREW UPDATED':'CREW ADDED');
+  await loadAll();
+}
+
+async function deleteCrew(id) {
+  if (!confirm('Remove this crew member?')) return;
+  await sb.from('crew').delete().eq('id',id);
+  toast('CREW REMOVED'); await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  CRUD — LABOR LOGS
+// ═══════════════════════════════════════
+async function logHours() {
+  const crew_id = document.getElementById('log-crew-sel').value;
+  const job_id  = document.getElementById('log-job-sel').value;
+  const hours   = parseFloat(document.getElementById('log-hrs').value)||0;
+  const rate    = parseFloat(document.getElementById('log-rate').value)||0;
+  const log_date = document.getElementById('log-date').value;
+  if (!crew_id||!job_id||!hours||!log_date) { alert('Please fill in all fields.'); return; }
+  const { error } = await sb.from('labor_logs').insert({ crew_id, job_id, hours, rate, log_date });
+  if (error) { alert('Error: '+error.message); return; }
+  document.getElementById('log-hrs').value='';
+  showSaved(); toast('HOURS LOGGED'); await loadAll();
+}
+
+async function deleteLaborLog(id) {
+  await sb.from('labor_logs').delete().eq('id',id);
+  toast('LOG REMOVED'); await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  CRUD — MATERIALS
+// ═══════════════════════════════════════
+async function logMaterial() {
+  const job_id  = document.getElementById('mat-job-sel').value;
+  const amount  = parseFloat(document.getElementById('mat-amount').value)||0;
+  const mat_date = document.getElementById('mat-date').value;
+  if (!job_id||!amount||!mat_date) { alert('Please fill in all fields.'); return; }
+  const data = { job_id, category:document.getElementById('mat-cat-sel').value, description:document.getElementById('mat-desc').value.trim(), amount, mat_date };
+  const { error } = await sb.from('materials').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  document.getElementById('mat-amount').value='';
+  document.getElementById('mat-desc').value='';
+  showSaved(); toast('MATERIALS LOGGED'); await loadAll();
+}
+
+async function deleteMaterial(id) {
+  await sb.from('materials').delete().eq('id',id);
+  toast('ENTRY DELETED'); await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  CRUD — VANS
+// ═══════════════════════════════════════
+function openVanModal(v) {
+  refreshDropdowns();
+  document.getElementById('van-modal-title').textContent = v ? 'EDIT VEHICLE' : 'ADD VEHICLE';
+  document.getElementById('van-id').value      = v?.id||'';
+  document.getElementById('van-vanid').value   = v?.van_id||'';
+  document.getElementById('van-model').value   = v?.model||'';
+  document.getElementById('van-miles').value   = v?.miles||'';
+  if (v?.driver_id) document.getElementById('van-driver-sel').value = v.driver_id;
+  openModal('modal-van');
+}
+function editVan(id) { openVanModal(DATA.vans.find(v=>v.id===id)); }
+
+async function saveVan() {
+  const van_id = document.getElementById('van-vanid').value.trim();
+  if (!van_id) { alert('Vehicle ID required.'); return; }
+  const id = document.getElementById('van-id').value;
+  const data = { van_id, model:document.getElementById('van-model').value.trim(), miles:parseInt(document.getElementById('van-miles').value)||0, driver_id:document.getElementById('van-driver-sel').value||null };
+  const { error } = id ? await sb.from('vans').update(data).eq('id',id) : await sb.from('vans').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  closeModal('modal-van'); showSaved(); toast(id?'VEHICLE UPDATED':'VEHICLE ADDED');
+  await loadAll();
+}
+
+async function deleteVan(id) {
+  if (!confirm('Delete this vehicle and its maintenance records?')) return;
+  await sb.from('maintenance_logs').delete().eq('van_id',id);
+  await sb.from('vans').delete().eq('id',id);
+  toast('VEHICLE REMOVED'); await loadAll();
+}
+
+// ═══════════════════════════════════════
+//  CRUD — MAINTENANCE
+// ═══════════════════════════════════════
+async function logMaint() {
+  const van_id = document.getElementById('maint-van-sel').value;
+  const log_date = document.getElementById('maint-date').value;
+  if (!van_id||!log_date) { alert('Please select a vehicle and date.'); return; }
+  const data = { van_id, type:document.getElementById('maint-type-sel').value, log_date, miles:parseInt(document.getElementById('maint-miles').value)||0, cost:parseFloat(document.getElementById('maint-cost').value)||0, next_due:document.getElementById('maint-next').value.trim(), description:document.getElementById('maint-notes').value.trim() };
+  const { error } = await sb.from('maintenance_logs').insert(data);
+  if (error) { alert('Error: '+error.message); return; }
+  ['maint-miles','maint-cost','maint-next','maint-notes'].forEach(id=>document.getElementById(id).value='');
+  showSaved(); toast('MAINTENANCE LOGGED'); await loadAll();
+}
+
+async function deleteMaintLog(id) {
+  await sb.from('maintenance_logs').delete().eq('id',id);
+  toast('ENTRY DELETED'); await loadAll();
+}
+</script>
+</body>
+</html>
