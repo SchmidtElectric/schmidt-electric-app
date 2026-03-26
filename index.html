@@ -30,7 +30,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 ::-webkit-scrollbar-thumb:hover{background:var(--yellow);}
 
 /* ── LOGIN ── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;padding-top:calc(20px + env(safe-area-inset-top));}
 .login-box{background:var(--dark);border:1px solid var(--border2);padding:48px 44px;width:100%;max-width:400px;}
 .login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
 .bolt{width:28px;height:28px;background:var(--yellow);clip-path:polygon(60% 0%,100% 0%,40% 50%,100% 50%,0% 100%,30% 50%,0% 50%);flex-shrink:0;}
@@ -59,7 +59,7 @@ option{background:var(--dark);}
 
 /* ── APP SHELL ── */
 #app{display:none;}
-.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--dark);position:sticky;top:0;z-index:200;}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;padding-top:calc(12px + env(safe-area-inset-top));border-bottom:1px solid var(--border);background:var(--dark);position:sticky;top:0;z-index:200;}
 .nav-brand{display:flex;align-items:center;gap:10px;}
 .nav-bolt{width:24px;height:24px;background:var(--yellow);clip-path:polygon(60% 0%,100% 0%,40% 50%,100% 50%,0% 100%,30% 50%,0% 50%);}
 .nav-name{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;}
