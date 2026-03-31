@@ -992,6 +992,7 @@ function renderAll() {
   renderJobs();
   renderCrew();
   renderFleet();
+  renderTickets();
   refreshDropdowns();
 }
 
@@ -1335,8 +1336,11 @@ function renderFleet() {
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t=>{ if(t.textContent.trim().toLowerCase()===name.toLowerCase()) t.classList.add('active'); });
+  const pg = document.getElementById('page-'+name);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>{
+    if(t.textContent.trim().toLowerCase().replace(/\s+/g,'')===name.toLowerCase().replace(/\s+/g,'')) t.classList.add('active');
+  });
 }
 
 // ═══════════════════════════════════════
@@ -2113,16 +2117,32 @@ enableNotifications = async function() {
 // Override loadAll to also load tickets
 const _origLoadAll = loadAll;
 loadAll = async function() {
-  await _origLoadAll();
-  await loadTickets();
-  renderTickets();
-};
-
-// Override renderAll to also render tickets
-const _origRenderAll = renderAll;
-renderAll = function() {
-  _origRenderAll();
-  renderTickets();
+  const [c,e,j,cr,ll,m,v,ml,g,gs,tk] = await Promise.all([
+    sb.from('customers').select('*').order('name'),
+    sb.from('estimates').select('*').order('created_at',{ascending:false}),
+    sb.from('jobs').select('*').order('created_at',{ascending:false}),
+    sb.from('crew').select('*').order('name'),
+    sb.from('labor_logs').select('*').order('log_date',{ascending:false}),
+    sb.from('materials').select('*').order('mat_date',{ascending:false}),
+    sb.from('vans').select('*').order('van_id'),
+    sb.from('maintenance_logs').select('*').order('log_date',{ascending:false}),
+    sb.from('generators').select('*').order('created_at',{ascending:false}),
+    sb.from('generator_services').select('*').order('service_date',{ascending:false}),
+    sb.from('tickets').select('*').order('created_at',{ascending:false}),
+  ]);
+  DATA.customers  = c.data  || [];
+  DATA.estimates  = e.data  || [];
+  DATA.jobs       = j.data  || [];
+  DATA.crew       = cr.data || [];
+  DATA.laborLogs  = ll.data || [];
+  DATA.materials  = m.data  || [];
+  DATA.vans       = v.data  || [];
+  DATA.maintLogs  = ml.data || [];
+  DATA.generators = g.data  || [];
+  DATA.genServices= gs.data || [];
+  DATA.tickets    = tk.data || [];
+  checkServiceReminders();
+  renderAll();
 };
 </script>
 </body>
